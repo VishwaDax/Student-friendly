@@ -1,0 +1,28 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Student Login</title>
+</head>
+<body>
+    <h1>Student Login</h1>
+
+    {% if form.errors %}
+        <p>Invalid username or password.</p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit">Login</button>
+    </form>
+
+    <p>
+        New student?
+        <a href="{% url 'signup' %}">Create an account</a>
+    </p>
+</body>
+</html>

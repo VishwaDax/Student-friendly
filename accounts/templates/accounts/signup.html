@@ -1,0 +1,24 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Student Signup</title>
+</head>
+<body>
+    <h1>Create Student Account</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit">Create Account</button>
+    </form>
+
+    <p>
+        Already registered?
+        <a href="{% url 'login' %}">Login</a>
+    </p>
+</body>
+</html>

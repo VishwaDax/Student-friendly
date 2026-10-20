@@ -64,3 +64,39 @@ class BookChunk(models.Model):
 
     def __str__(self):
         return f"{self.book.title} - Page {self.page_number}"
+class Topic(models.Model):
+    TOPIC_TYPES = [
+        ("chapter", "Chapter"),
+        ("topic", "Topic"),
+    ]
+
+    book = models.ForeignKey(
+        Book,
+        on_delete=models.CASCADE,
+        related_name="topics",
+    )
+    title = models.CharField(max_length=255)
+    topic_type = models.CharField(
+        max_length=20,
+        choices=TOPIC_TYPES,
+        default="topic",
+    )
+    page_number = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["page_number", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "book",
+                    "title",
+                    "page_number",
+                    "topic_type",
+                ],
+                name="unique_book_topic_page_type",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.title} - Page {self.page_number}"

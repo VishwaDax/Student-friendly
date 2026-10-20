@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Main Room</title>
+</head>
+<body>
+    <h1>Main Room</h1>
+
+    <p>
+        Search across your own uploaded textbooks.
+    </p>
+
+    <form method="get">
+        <input
+            type="search"
+            name="q"
+            value="{{ query }}"
+            placeholder="Search your textbooks"
+            required
+        >
+        <button type="submit">Search All My Books</button>
+    </form>
+
+    {% if query %}
+        <h2>Search Results</h2>
+
+        {% for result in results %}
+            <article>
+                <h3>
+                    <a href="{% url 'book_chat' result.book_id %}">
+                        {{ result.title }}
+                    </a>
+                </h3>
+
+                <p>Page {{ result.page_number }}</p>
+                <p>{{ result.content|truncatechars:1200 }}</p>
+
+                <a href="{% url 'book_chat' result.book_id %}">
+                    Open Book Chat
+                </a>
+            </article>
+            <hr>
+        {% empty %}
+            <p>
+                I couldn't find supporting content in your
+                uploaded textbooks. Try different keywords.
+            </p>
+        {% endfor %}
+    {% endif %}
+
+    <p>
+        <a href="{% url 'upload_book' %}">Upload a Textbook</a>
+    </p>
+    <p>
+        <a href="{% url 'dashboard' %}">Back to Dashboard</a>
+    </p>
+</body>
+</html>

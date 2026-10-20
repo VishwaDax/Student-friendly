@@ -1,11 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Student Dashboard</title>
 </head>
+
 <body>
     <h1>Welcome, {{ request.user.username }}</h1>
 
@@ -16,22 +17,27 @@
         {{ request.user.get_preferred_language_display }}
     </p>
     <p>
-    <a href="{% url 'upload_book' %}">
-        Upload a Textbook
-    </a>
-</p>
+        <a href="{% url 'upload_book' %}">
+            Upload a Textbook
+        </a>
+    </p>
 
     <h2>My Textbooks</h2>
 
     {% for book in books %}
-        <article>
-            <h3>{{ book.title }}</h3>
-            <p>Language: {{ book.get_language_display }}</p>
-            <p>Subject: {{ book.subject }}</p>
-            <p>Status: {{ book.get_status_display }}</p>
-        </article>
+    <div>
+        <h3>{{ book.title }}</h3>
+        <p>Subject: {{ book.subject }}</p>
+        <p>Status: {{ book.status }}</p>
+
+        {% if book.status == "ready" %}
+        <a href="{% url 'book_chat' book.id %}">
+            Open Book Chat
+        </a>
+        {% endif %}
+    </div>
     {% empty %}
-        <p>You haven't uploaded any textbooks yet.</p>
+    <p>You haven't uploaded any textbooks yet.</p>
     {% endfor %}
 
     <form method="post" action="{% url 'logout' %}">
@@ -39,4 +45,5 @@
         <button type="submit">Logout</button>
     </form>
 </body>
+
 </html>

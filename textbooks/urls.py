@@ -1,6 +1,12 @@
 from django.urls import path
-from .views import upload_book
+from .views import upload_book, book_chat, main_room
 
 urlpatterns = [
-    path("upload/", upload_book, name="upload_book"),
+     path("upload/", upload_book, name="upload_book"),
+    path("main-room/", main_room, name="main_room"),
+    path(
+        "book/<int:book_id>/chat/",
+        book_chat,
+        name="book_chat",
+    ),
 ]

@@ -1,0 +1,20 @@
+{% extends "accounts/base.html" %}
+
+{% block title %}Resend verification | StudyMate AI{% endblock %}
+
+{% block content %}
+    <section class="panel auth-card verification-card">
+        <p class="eyebrow">Account verification</p>
+        <h1>Resend verification code</h1>
+        <p class="muted">
+            Enter the email address used when creating your account. A
+            six-digit code will be sent if the account needs verification.
+        </p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-fields">{{ form.as_p }}</div>
+            <button class="form-submit" type="submit">Send verification code</button>
+        </form>
+        <p class="form-footer"><a href="{% url 'login' %}">Return to log in</a></p>
+    </section>
+{% endblock %}

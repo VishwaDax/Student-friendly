@@ -226,16 +226,24 @@ button:hover,
 }
 
 .nav-link-button {
-    min-height: auto;
-    padding: 0;
-    border-radius: 0;
-    color: var(--muted);
-    background: transparent;
+    min-height: 40px;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid #f0d9dc;
+    border-radius: 10px;
+    color: #a33b49;
+    background: #ffffff;
+    box-shadow: none;
+    transition:
+        color 150ms ease,
+        background-color 150ms ease,
+        border-color 150ms ease;
 }
 
 .nav-link-button:hover {
-    color: var(--primary);
-    background: transparent;
+    color: #8f2636;
+    border-color: #e9bec4;
+    background: #ffeded;
+    box-shadow: none;
     transform: none;
 }
 
@@ -1279,7 +1287,9 @@ body.processing {
     }
 
     .nav-links form .nav-link-button {
+        justify-content: flex-start;
         min-height: 44px;
+        padding: 11px 12px;
     }
 
     .page-shell {

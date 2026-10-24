@@ -1,0 +1,26 @@
+{% extends "accounts/base.html" %}
+
+{% block title %}Check your email | StudyMate AI{% endblock %}
+
+{% block content %}
+    <section class="panel auth-card verification-card">
+        <p class="eyebrow">One more step</p>
+        <h1>Check your email</h1>
+        <p>
+            If an unverified account uses that address, check your inbox for
+            a six-digit verification code. Enter it within 10 minutes.
+        </p>
+        <p class="muted">
+            During local development, check the Django server terminal for
+            the code.
+        </p>
+        <p class="form-footer">
+            <a href="{% url 'verify_email_otp' %}">Enter verification code</a>
+        </p>
+        <p class="form-footer">
+            Need another code?
+            <a href="{% url 'request_email_verification' %}">Request a new code</a>
+        </p>
+        <p class="form-footer"><a href="{% url 'login' %}">Return to log in</a></p>
+    </section>
+{% endblock %}

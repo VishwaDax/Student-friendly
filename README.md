@@ -31,8 +31,14 @@ Elasticsearch, Ollama, or a locally hosted generative model.
 
 ### Accounts and library
 
-- Student signup with username, email, age, class, and preferred language.
-- Login and logout using the custom `accounts.Student` user model.
+- Student signup with username, verified email, age, class, and preferred language.
+- Email verification is required before login. Signup emails a six-digit
+  one-time code that expires after 10 minutes; unverified users can request
+  a replacement code from the login page. The code allows five attempts
+  and resend requests are limited to once per minute.
+- Login accepts either username or email, and only verified students can
+  authenticate.
+- Logout is a POST action and asks for confirmation.
 - A dashboard showing each student's own books and their processing status.
 - A mobile-responsive interface with upload/search progress feedback.
 - A confirmed, owner-scoped delete action. Deleting a book removes its
@@ -92,11 +98,13 @@ Student-friendly/
 │   ├── settings.py                 # Django, SQLite, OCR, search, NVIDIA settings
 │   └── urls.py                     # Root URLs and development media serving
 ├── accounts/
-│   ├── models.py                   # Custom Student user
-│   ├── forms.py                    # Signup form
-│   ├── views.py                    # Signup, login, dashboard
+│   ├── models.py                   # Custom Student and OTP state
+│   ├── forms.py                    # Signup, login, and OTP forms
+│   ├── views.py                    # Signup, OTP verification, login, dashboard
+│   ├── email_verification.py       # OTP generation, hashing, expiry, checks
+│   ├── backends.py                 # Refuse authentication before verification
 │   ├── urls.py
-│   ├── templates/accounts/         # Shared layout, auth, dashboard
+│   ├── templates/accounts/         # Auth, OTP, shared layout, dashboard
 │   ├── static/accounts/            # CSS, responsive navigation, logo assets
 │   └── migrations/
 ├── textbooks/
@@ -137,6 +145,9 @@ SQLite database are local data; do not delete them as a routine setup step.
 - NVIDIA API key and an account-enabled chat-completions model if generated
   explanations are required. Local search and passage retrieval work
   without NVIDIA credentials.
+- SMTP configuration is needed for delivering verification codes by
+  email. For local development, the supplied `.env.example` uses Django's
+  console backend, which prints the code in the server terminal.
 
 The interface and embedding model are intended for multilingual material,
 but OCR quality, retrieval quality, and generated-answer quality have not
@@ -187,6 +198,10 @@ Start the development server:
 python manage.py runserver
 ```
 
+For a superuser, open the login page, choose **Resend verification code**,
+enter the superuser email, and enter the OTP in that same browser session
+before signing in to Django admin.
+
 Open `http://127.0.0.1:8000/`. The root URL redirects to the dashboard,
 which requires login.
 
@@ -194,6 +209,8 @@ which requires login.
 | --- | --- |
 | Signup | `http://127.0.0.1:8000/accounts/signup/` |
 | Login | `http://127.0.0.1:8000/accounts/login/` |
+| Verify email OTP | `http://127.0.0.1:8000/accounts/verify-email/` |
+| Request/resend OTP | `http://127.0.0.1:8000/accounts/request-verification/` |
 | Dashboard | `http://127.0.0.1:8000/accounts/dashboard/` |
 | Upload textbook | `http://127.0.0.1:8000/textbooks/upload/` |
 | Main Room | `http://127.0.0.1:8000/textbooks/main-room/` |
@@ -218,6 +235,11 @@ loads it when Django starts.
 | `NVIDIA_MAX_RETRIES` | SDK retry limit; valid range 0–3 | `2` |
 | `TEXTBOOK_MIN_EVIDENCE_SCORE` | Minimum RRF score for sending evidence to generation | `0.015` |
 | `TESSERACT_DATA_DIR` | Additional OCR trained-data directory | `media/tessdata` |
+| `EMAIL_BACKEND` | Django email backend | Console backend |
+| `EMAIL_HOST` / `EMAIL_PORT` | SMTP server and port, if using SMTP | Empty / `587` |
+| `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | SMTP credentials | Empty |
+| `EMAIL_USE_TLS` | Enable SMTP TLS | `true` |
+| `DEFAULT_FROM_EMAIL` | Sender shown on verification email | `StudyMate AI <noreply@localhost>` in settings; example provides `noreply@example.com` |
 
 The evidence-score default is provisional, not calibrated against a
 representative evaluation set. Change it only after measuring retrieval on
@@ -248,6 +270,30 @@ The model and processing defaults are in `config/settings.py`:
 The first embedding operation downloads the model to the local Hugging Face
 cache. On Windows, Hugging Face may warn that symlinks are unavailable; the
 cache still works but can use more disk space.
+
+### Email verification
+
+The registration form creates an inactive account and starts the OTP
+verification flow:
+
+1. The app emails a random six-digit code to the submitted address.
+2. The student enters the code on the verification screen in the same
+   browser session.
+3. A correct, unexpired code marks the email verified and activates the
+   account; the student can then log in using username or email.
+
+Codes are stored as password hashes, expire after 10 minutes, and allow at
+most five incorrect attempts. Resend requests are limited to one per minute.
+The resend response is deliberately generic to avoid revealing whether an
+email belongs to an account. With the supplied local console backend, find
+the code in the Django server terminal. For actual email delivery, configure
+SMTP variables in `.env`; never put SMTP credentials in `.env.example`.
+
+The email-verification migration adds `email_verified=False` to existing
+students, so existing accounts must verify their registered email before
+logging in. Use **Resend verification code** on the login page to start the
+OTP flow. An OTP is tied to the browser session that requested it; it is a
+code-entry flow, not a clickable email link.
 
 ### Tesseract OCR
 
@@ -387,6 +433,21 @@ non-fatal; Developer Mode can enable symlinks, but is not required.
 Check that `.env` contains a valid `NVIDIA_API_KEY` and an exact,
 account-enabled `NVIDIA_MODEL`. Restart the Django server after changing
 `.env`. Search remains local if NVIDIA is unconfigured or unavailable.
+
+### Verification code email is missing
+
+The sample `.env.example` uses the console email backend, so signup codes
+appear in the PowerShell window running `runserver`. If SMTP is configured,
+check `EMAIL_BACKEND`, the SMTP host/port, credentials, TLS mode, and
+provider-approved sender in the ignored local `.env`; restart the server
+after changing it. Existing unverified students can request a new code from
+the login page.
+
+### Verification code is rejected or expired
+
+Enter the newest code in the same browser session that requested it. Codes
+expire after 10 minutes; only five incorrect submissions are allowed, and
+resends are limited to one per minute. Request a new code and retry.
 
 ### Search returns no passages
 

@@ -80,8 +80,11 @@ if (-not (Test-Path .env)) {
 }
 ```
 
-No NVIDIA key is needed to start the site. To enable generated answers,
-edit `.env` and set an NVIDIA API key and an account-enabled model:
+The supplied sample uses Django's console email backend, so local signup
+verification codes appear in the PowerShell window running the server. No
+SMTP credentials are needed for local development. No NVIDIA key is needed
+to start the site. To enable generated answers, edit `.env` and set an
+NVIDIA API key and an account-enabled model:
 
 ```dotenv
 NVIDIA_API_KEY=your_actual_key
@@ -95,6 +98,49 @@ TEXTBOOK_MIN_EVIDENCE_SCORE=0.015
 Replace the sample values locally. Never commit `.env` or put credentials
 in `.env.example`, source code, browser code, screenshots, or issue reports.
 Restart the Django server after changing environment variables.
+
+### Email verification and email delivery
+
+New accounts must verify their email before logging in. The signup flow is:
+
+1. Submit the student registration form with a valid email address.
+2. The app creates an inactive account and sends a random six-digit OTP.
+3. Enter that code on the verification screen in the same browser session.
+4. A correct code activates the account; log in using either username or
+   email.
+
+The code expires after 10 minutes, allows at most five incorrect attempts,
+and is stored as a password hash. Resend requests are limited to one every
+60 seconds. The code must be entered in the browser session that requested
+it; verification is not a clickable link. The resend response is generic
+for privacy, so it does not disclose whether an account exists.
+
+With the sample console backend, read the OTP in the terminal running
+`runserver`. For actual email delivery, configure SMTP settings in `.env`
+using credentials from your email provider:
+
+```dotenv
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your-smtp-username
+EMAIL_HOST_PASSWORD=your-smtp-password
+EMAIL_USE_TLS=true
+DEFAULT_FROM_EMAIL=StudyMate AI <noreply@example.com>
+```
+
+Use the provider's supported SMTP host, port, TLS mode, and sender address.
+Keep the SMTP password secret. Restart the server after changing `.env`.
+The SMTP backend only works when the host, username, password, and sender
+are valid for your email provider. If signup reports a delivery error,
+check the Django terminal and the local settings, or temporarily switch
+`EMAIL_BACKEND` back to
+`django.core.mail.backends.console.EmailBackend`.
+
+After applying the email-verification migrations, existing accounts also
+need to verify their registered address before logging in. From the login
+page, use **Resend verification code** and enter the resulting code in that
+same browser session.
 
 ## 4. Set up OCR (optional for text-based PDFs)
 
@@ -176,7 +222,9 @@ create a student through the signup page:
 http://127.0.0.1:8000/accounts/signup/
 ```
 
-Then sign in at `/accounts/login/`. The dashboard is at
+After signup, enter the OTP sent to the account email (or printed in the
+server terminal when using the console backend). Once verified, sign in at
+`/accounts/login/` with the username or email address. The dashboard is at
 `/accounts/dashboard/`; upload a book at `/textbooks/upload/`, or open Main
 Room at `/textbooks/main-room/`.
 
@@ -189,6 +237,10 @@ create an admin account:
 ```
 
 Restart the server and visit `http://127.0.0.1:8000/admin/`.
+New superuser accounts also require a verified email. With the server
+running, use **Resend verification code** on the login page, enter the
+superuser email, and complete OTP verification in that browser session
+before signing in to Django admin.
 
 ## 8. Verify local embeddings
 
@@ -290,6 +342,21 @@ Check that `.env` contains a valid `NVIDIA_API_KEY` and an enabled
 `NVIDIA_MODEL`; restart Django after editing the file. Provider
 configuration is optional for running the site and performing local
 retrieval.
+
+### Email verification code is missing
+
+With the supplied `.env.example`, the code is printed in the PowerShell
+window running Django. If SMTP is enabled, confirm `.env` contains valid
+provider credentials and a sender address allowed by that provider, then
+restart the server. Existing unverified accounts can request a code from
+the login page.
+
+### Verification code is rejected or expired
+
+Use the newest code in the same browser session that requested it. Codes
+expire after 10 minutes; only five incorrect attempts are allowed, and a
+new code can be requested once per minute. Request a replacement code and
+try again.
 
 ### Port 8000 is already in use
 

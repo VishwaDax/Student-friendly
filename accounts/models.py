@@ -9,6 +9,12 @@ from textbooks.languages import (
 
 
 class Student(AbstractUser):
+    email_verified = models.BooleanField(default=False)
+    email_otp_hash = models.CharField(max_length=128, blank=True)
+    email_otp_expires_at = models.DateTimeField(null=True, blank=True)
+    email_otp_sent_at = models.DateTimeField(null=True, blank=True)
+    email_otp_attempts = models.PositiveSmallIntegerField(default=0)
+
     age = models.PositiveSmallIntegerField(
         null=True,
         blank=True,

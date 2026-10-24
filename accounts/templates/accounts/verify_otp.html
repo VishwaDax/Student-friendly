@@ -1,0 +1,31 @@
+{% extends "accounts/base.html" %}
+
+{% block title %}Verify your email | StudyMate AI{% endblock %}
+
+{% block content %}
+    <section class="panel auth-card verification-card">
+        <p class="eyebrow">Email verification</p>
+        <h1>Enter your verification code</h1>
+        <p class="muted">
+            We sent a six-digit code to <strong>{{ email }}</strong>.
+            The code expires in 10 minutes.
+        </p>
+        {% if verification_message %}
+            <div class="message message-error" role="alert">
+                {{ verification_message }}
+            </div>
+        {% endif %}
+        {% if form.non_field_errors %}
+            <div class="message message-error" role="alert">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-fields">{{ form.as_p }}</div>
+            <button class="form-submit" type="submit">Verify email</button>
+        </form>
+        <p class="form-footer">
+            Code expired or locked?
+            <a href="{% url 'request_email_verification' %}">Request another code</a>
+        </p>
+    </section>
+{% endblock %}

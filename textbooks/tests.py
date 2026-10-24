@@ -45,10 +45,12 @@ class LocalSearchTests(TestCase):
     def setUp(self):
         self.student = Student.objects.create_user(
             username="reader",
+            email_verified=True,
             password="test-password-123",
         )
         self.other_student = Student.objects.create_user(
             username="other-reader",
+            email_verified=True,
             password="test-password-123",
         )
         self.book = Book.objects.create(
@@ -299,6 +301,7 @@ class PdfProcessingTests(TestCase):
             with override_settings(MEDIA_ROOT=root / "media"):
                 student = Student.objects.create_user(
                     username="pdf-reader",
+                    email_verified=True,
                     password="test-password-123",
                 )
                 book = Book(
@@ -325,10 +328,12 @@ class SearchViewAuthorizationTests(TestCase):
     def setUp(self):
         self.student = Student.objects.create_user(
             username="view-reader",
+            email_verified=True,
             password="test-password-123",
         )
         self.other_student = Student.objects.create_user(
             username="view-other",
+            email_verified=True,
             password="test-password-123",
         )
         self.book = Book.objects.create(
@@ -652,6 +657,7 @@ class ReindexCommandTests(TestCase):
     def setUp(self):
         self.student = Student.objects.create_user(
             username="reindex-reader",
+            email_verified=True,
             password="test-password-123",
         )
         self.book = Book.objects.create(

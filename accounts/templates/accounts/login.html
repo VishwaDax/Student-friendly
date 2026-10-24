@@ -22,7 +22,7 @@
 
         <section class="panel auth-card">
             <h2>Log in</h2>
-            <p class="muted">Enter your student account details.</p>
+            <p class="muted">Enter your username or email and password.</p>
             {% if form.errors %}
                 <div class="message message-error" role="alert">We couldn't sign you in with those details. Please check them and try again.</div>
             {% endif %}
@@ -34,6 +34,10 @@
                 <div class="form-fields">{{ form.as_p }}</div>
                 <button class="form-submit" type="submit">Log in to your library</button>
             </form>
+            <p class="form-footer">
+                Need a verification code?
+                <a href="{% url 'request_email_verification' %}">Resend verification code</a>
+            </p>
             <p class="form-footer">New to StudyMate AI? <a href="{% url 'signup' %}">Create an account</a></p>
         </section>
     </div>

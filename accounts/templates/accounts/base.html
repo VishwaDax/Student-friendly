@@ -33,7 +33,11 @@
                     <a class="{% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" href="{% url 'dashboard' %}">My library</a>
                     <a class="{% if request.resolver_match.url_name == 'main_room' %}is-active{% endif %}" href="{% url 'main_room' %}">Main Room</a>
                     <a class="nav-action" href="{% url 'upload_book' %}">＋ <span>Add a textbook</span></a>
-                    <form method="post" action="{% url 'logout' %}">
+                    <form
+                        method="post"
+                        action="{% url 'logout' %}"
+                        data-confirm="Are you sure you want to log out?"
+                    >
                         {% csrf_token %}
                         <button class="nav-link-button" type="submit">Log out</button>
                     </form>

@@ -1,25 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Upload Textbook</title>
-</head>
-<body>
-    <h1>Upload a Textbook</h1>
+{% extends "accounts/base.html" %}
 
-    {% if messages %}
-        {% for message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endif %}
+{% block title %}Add a textbook | StudyMate AI{% endblock %}
 
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Upload and Process</button>
-    </form>
+{% block content %}
+    <a class="back-link" href="{% url 'dashboard' %}">← Back to my library</a>
+    <div class="page-heading">
+        <p class="eyebrow">Grow your library</p>
+        <h1>Add a textbook</h1>
+        <p class="subtitle">Add the book details and PDF. Once processed, its pages will be ready to search.</p>
+    </div>
 
-    <p><a href="{% url 'dashboard' %}">Back to dashboard</a></p>
-</body>
-</html>
+    <section class="panel upload-panel">
+        <div class="upload-intro">
+            <span class="upload-icon" aria-hidden="true">↥</span>
+            <div>
+                <h2>Book details</h2>
+                <p class="muted">We’ll extract pages and prepare this book for searching.</p>
+            </div>
+        </div>
+        <form method="post" enctype="multipart/form-data"
+              data-processing-title="Preparing your textbook"
+              data-processing-message="Extracting pages and building local search data. Keep this tab open; larger books may take a few minutes.">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="message message-error" role="alert">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <div class="form-fields">{{ form.as_p }}</div>
+            <p class="field-help upload-help">PDF files only · Maximum file size: 100 MB</p>
+            <button class="form-submit" type="submit">Upload and process textbook</button>
+        </form>
+    </section>
+{% endblock %}

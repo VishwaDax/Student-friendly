@@ -22,9 +22,9 @@ class BookUploadForm(forms.ModelForm):
                 "Only PDF files are allowed."
             )
 
-        if pdf.size > 50 * 1024 * 1024:
+        if pdf.size > 100 * 1024 * 1024:
             raise forms.ValidationError(
-                "Maximum PDF size is 50 MB."
+                "Maximum PDF size is 100 MB."
             )
 
         # Check the file signature rather than relying only

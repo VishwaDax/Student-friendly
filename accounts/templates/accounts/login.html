@@ -1,28 +1,40 @@
+{% extends "accounts/base.html" %}
+{% load static %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Student Login</title>
-</head>
-<body>
-    <h1>Student Login</h1>
+{% block title %}Log in | StudyMate AI{% endblock %}
 
-    {% if form.errors %}
-        <p>Invalid username or password.</p>
-    {% endif %}
+{% block content %}
+    <div class="auth-layout">
+        <section class="auth-intro">
+            <img
+                class="auth-brand-logo"
+                src="{% static 'accounts/images/studymate-logo.png' %}"
+                alt="StudyMate AI — Your Textbook Learning Partner"
+            >
+            <p class="eyebrow">Welcome back</p>
+            <h1>Pick up where your learning left off.</h1>
+            <p class="subtitle">Sign in to find the right passage in your textbooks and keep your study library close.</p>
+            <div class="auth-note">
+                <span aria-hidden="true">✦</span>
+                <span>Your searches stay focused on the textbooks in your own library.</span>
+            </div>
+        </section>
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-
-        <button type="submit">Login</button>
-    </form>
-
-    <p>
-        New student?
-        <a href="{% url 'signup' %}">Create an account</a>
-    </p>
-</body>
-</html>
+        <section class="panel auth-card">
+            <h2>Log in</h2>
+            <p class="muted">Enter your student account details.</p>
+            {% if form.errors %}
+                <div class="message message-error" role="alert">We couldn't sign you in with those details. Please check them and try again.</div>
+            {% endif %}
+            <form method="post">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="message message-error" role="alert">{{ form.non_field_errors }}</div>
+                {% endif %}
+                <div class="form-fields">{{ form.as_p }}</div>
+                <button class="form-submit" type="submit">Log in to your library</button>
+            </form>
+            <p class="form-footer">New to StudyMate AI? <a href="{% url 'signup' %}">Create an account</a></p>
+        </section>
+    </div>
+{% endblock %}

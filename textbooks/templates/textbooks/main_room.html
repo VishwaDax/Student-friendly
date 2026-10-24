@@ -1,60 +1,91 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Main Room</title>
-</head>
-<body>
-    <h1>Main Room</h1>
+{% extends "accounts/base.html" %}
 
-    <p>
-        Search across your own uploaded textbooks.
-    </p>
+{% block title %}Main Room | StudyMate AI{% endblock %}
 
-    <form method="get">
-        <input
-            type="search"
-            name="q"
-            value="{{ query }}"
-            placeholder="Search your textbooks"
-            required
-        >
-        <button type="submit">Search All My Books</button>
-    </form>
+{% block content %}
+    <a class="back-link" href="{% url 'dashboard' %}">← Back to my library</a>
+    <div class="page-heading">
+        <p class="eyebrow">Search your collection</p>
+        <h1>Main Room</h1>
+        <p class="subtitle">Find supporting passages across the textbooks in your library.</p>
+    </div>
 
-    {% if query %}
-        <h2>Search Results</h2>
-
-        {% for result in results %}
-            <article>
-                <h3>
-                    <a href="{% url 'book_chat' result.book_id %}">
-                        {{ result.title }}
-                    </a>
-                </h3>
-
-                <p>Page {{ result.page_number }}</p>
-                <p>{{ result.content|truncatechars:1200 }}</p>
-
-                <a href="{% url 'book_chat' result.book_id %}">
-                    Open Book Chat
-                </a>
-            </article>
-            <hr>
-        {% empty %}
-            <p>
-                I couldn't find supporting content in your
-                uploaded textbooks. Try different keywords.
-            </p>
-        {% endfor %}
+    {% if has_ready_books %}
+        <section class="panel search-panel">
+            <p class="eyebrow">Ask your library</p>
+            <h2>What would you like to learn?</h2>
+            <p class="muted">Answers use passages from your ready textbooks and include page references.</p>
+            <form class="search-form" method="post"
+                  data-processing-title="Searching your textbooks"
+                  data-processing-message="Finding relevant passages in your library. This usually takes a few seconds.">
+                {% csrf_token %}
+                <input
+                    class="search-input"
+                    type="search"
+                    name="q"
+                    value="{{ query }}"
+                    placeholder="Try a topic, term, or question"
+                    aria-label="Search your textbooks"
+                    maxlength="1000"
+                    required
+                >
+                <button type="submit">Search my books</button>
+            </form>
+        </section>
+    {% else %}
+        <section class="empty-state empty-state-panel">
+            <span class="empty-state-icon" aria-hidden="true">⌕</span>
+            <p class="eyebrow">Your study space is ready</p>
+            <h2>No searchable textbooks yet</h2>
+            <p>Upload a PDF and wait for it to finish processing. Once it’s ready, you can search across your whole library here.</p>
+            <a class="button" href="{% url 'upload_book' %}">Add your first textbook</a>
+        </section>
     {% endif %}
 
-    <p>
-        <a href="{% url 'upload_book' %}">Upload a Textbook</a>
-    </p>
-    <p>
-        <a href="{% url 'dashboard' %}">Back to Dashboard</a>
-    </p>
-</body>
-</html>
+    {% if answer %}
+        <section class="result-list" aria-live="polite">
+            <article class="card result-card">
+                <p class="eyebrow">Your question</p>
+                <h3>{{ query }}</h3>
+                <p class="eyebrow">Textbook-based response</p>
+                <p class="result-content">{{ answer.answer }}</p>
+                {% if answer.sources %}
+                    <h3>Sources</h3>
+                    <ul class="topic-list">
+                        {% for source in answer.sources %}
+                            <li class="topic-item">
+                                <strong>{{ source.title }} · Page {{ source.page_number }} [{{ source.source_id }}]</strong>
+                                <span>{{ source.content }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </article>
+        </section>
+    {% endif %}
+
+    {% if chat_messages %}
+        <section class="result-list" aria-label="Conversation history">
+            <h2>Conversation</h2>
+            {% for message in chat_messages %}
+                <article class="card result-card">
+                    <p class="result-meta">{{ message.get_role_display }}</p>
+                    <p class="result-content">{{ message.content }}</p>
+                </article>
+            {% endfor %}
+        </section>
+    {% endif %}
+
+    {% if answer and results %}
+        <section class="result-list" aria-live="polite">
+            <h2>Retrieved textbook passages</h2>
+            {% for result in results %}
+                <article class="card result-card">
+                    <h3><a href="{% url 'book_chat' result.book_id %}">{{ result.title }}</a></h3>
+                    <p class="result-meta">Page {{ result.page_number }} · {{ result.language }}</p>
+                    <p class="result-content">{{ result.content|truncatechars:1200 }}</p>
+                </article>
+            {% endfor %}
+        </section>
+    {% endif %}
+{% endblock %}

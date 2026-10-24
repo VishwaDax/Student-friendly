@@ -1,14 +1,16 @@
-import os
+from pathlib import Path
 
-import fitz
 import pytesseract
 from PIL import Image
+import pymupdf
 
 from django.conf import settings
 from django.db import transaction
 
 from textbooks.models import BookChunk
-from textbooks.search import create_book_index
+from textbooks.services.embeddings import encode_texts
+from textbooks.services.local_search import index_chunks
+from textbooks.services.passage_chunker import split_into_passages
 
 
 # Map our application language codes to Tesseract codes.
@@ -48,7 +50,7 @@ def extract_page_text(page, language):
 
     # OCR fallback for scanned or image-based pages.
     pixmap = page.get_pixmap(
-        matrix=fitz.Matrix(2, 2),
+        matrix=pymupdf.Matrix(2, 2),
         alpha=False,
     )
 
@@ -66,11 +68,18 @@ def extract_page_text(page, language):
         pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
     lang = TESSERACT_LANGUAGES.get(language, "eng")
+    tessdata_dir = Path(settings.TESSERACT_DATA_DIR)
+    tesseract_config = (
+        f'--tessdata-dir {tessdata_dir}'
+        if tessdata_dir.is_dir()
+        else ""
+    )
 
     try:
         return pytesseract.image_to_string(
             image,
             lang=lang,
+            config=tesseract_config,
         ).strip()
     except pytesseract.TesseractError:
         # If a language data file is missing, do not silently
@@ -83,54 +92,46 @@ def extract_page_text(page, language):
 
 
 def process_book(book):
-    """Extract each page, save it in SQLite, then index it."""
+    """Extract, split, embed, and locally index one PDF."""
     pdf_path = book.pdf_file.path
-    chunks = []
-
-    with fitz.open(pdf_path) as document:
+    passages = []
+    with pymupdf.open(pdf_path) as document:
         for page_index, page in enumerate(document):
             content = extract_page_text(page, book.language)
+            passages.extend(
+                (page_index + 1, passage)
+                for passage in split_into_passages(content)
+            )
 
-            if content:
-                chunks.append(
-                    BookChunk(
-                        book=book,
-                        page_number=page_index + 1,
-                        content=content,
-                    )
-                )
-
-    if not chunks:
+    if not passages:
         raise ValueError(
             "No readable text was extracted from this PDF."
         )
 
-    # Replace previous chunks if the book is processed again.
+    embeddings = encode_texts(
+        [content for _page_number, content in passages]
+    )
+    chunks = [
+        BookChunk(
+            book=book,
+            page_number=page_number,
+            content=content,
+            embedding=embedding,
+        )
+        for (page_number, content), embedding in zip(
+            passages,
+            embeddings,
+            strict=True,
+        )
+    ]
+
+    # Stage extraction and embeddings first; replace old data atomically.
     with transaction.atomic():
         BookChunk.objects.filter(book=book).delete()
         BookChunk.objects.bulk_create(chunks)
-
-    # Index the saved passages in Elasticsearch.
-    client = create_book_index()
-    saved_chunks = BookChunk.objects.filter(book=book)
-
-    for chunk in saved_chunks.iterator():
-        client.index(
-            index=settings.ELASTICSEARCH_BOOK_INDEX,
-            id=str(chunk.id),
-            document={
-                "book_id": book.id,
-                "student_id": book.student_id,
-                "title": book.title,
-                "language": book.language,
-                "standard": book.standard,
-                "page_number": chunk.page_number,
-                "content": chunk.content,
-            },
+        saved_chunks = list(
+            BookChunk.objects.filter(book=book).select_related("book")
         )
+        index_chunks(saved_chunks)
 
-    client.indices.refresh(
-        index=settings.ELASTICSEARCH_BOOK_INDEX
-    )
-
-    return len(chunks)
+    return len(passages)

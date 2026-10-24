@@ -62,8 +62,15 @@ class BookChunk(models.Model):
 
     content = models.TextField()
 
+    embedding = models.JSONField(
+        null=True,
+        blank=True,
+    )
+
     def __str__(self):
         return f"{self.book.title} - Page {self.page_number}"
+
+
 class Topic(models.Model):
     TOPIC_TYPES = [
         ("chapter", "Chapter"),

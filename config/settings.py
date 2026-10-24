@@ -10,10 +10,18 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+if load_dotenv:
+    load_dotenv(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
@@ -138,8 +146,33 @@ LOGOUT_REDIRECT_URL = "login"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-ELASTICSEARCH_URL = "http://localhost:9200"
-ELASTICSEARCH_BOOK_INDEX = "textbook_pages"
+TESSERACT_DATA_DIR = os.getenv(
+    "TESSERACT_DATA_DIR",
+    str(MEDIA_ROOT / "tessdata"),
+)
 TESSERACT_CMD = (
     r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 )
+
+TEXTBOOK_EMBEDDING_MODEL = (
+    "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+)
+TEXTBOOK_EMBEDDING_DIMENSIONS = 384
+TEXTBOOK_CHUNK_SIZE = 1200
+TEXTBOOK_CHUNK_OVERLAP = 200
+TEXTBOOK_MIN_COSINE_SIMILARITY = 0.35
+TEXTBOOK_MIN_EVIDENCE_SCORE = float(
+    os.getenv("TEXTBOOK_MIN_EVIDENCE_SCORE", "0.015")
+)
+TEXTBOOK_MAX_LLM_PASSAGES = 6
+TEXTBOOK_MAX_LLM_PASSAGE_CHARACTERS = 1800
+TEXTBOOK_MAX_LLM_CONTEXT_CHARACTERS = 10800
+TEXTBOOK_MAX_QUESTION_CHARACTERS = 1000
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
+NVIDIA_MODEL = os.getenv("NVIDIA_MODEL", "")
+NVIDIA_API_BASE_URL = os.getenv(
+    "NVIDIA_BASE_URL",
+    os.getenv("NVIDIA_API_BASE_URL", "https://integrate.api.nvidia.com/v1"),
+)
+NVIDIA_TIMEOUT_SECONDS = os.getenv("NVIDIA_TIMEOUT_SECONDS", "45")
+NVIDIA_MAX_RETRIES = os.getenv("NVIDIA_MAX_RETRIES", "2")

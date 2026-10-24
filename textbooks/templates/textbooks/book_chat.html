@@ -1,60 +1,106 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ book.title }} - Book Chat</title>
-</head>
-<body>
-    <h1>{{ book.title }}</h1>
-    <p>Subject: {{ book.subject }}</p>
-    <p>Language: {{ book.get_language_display }}</p>
+{% extends "accounts/base.html" %}
 
-    <form method="get">
-        <input
-            type="search"
-            name="q"
-            value="{{ query }}"
-            placeholder="Ask or search this textbook"
-            required
-        >
-        <button type="submit">Search Book</button>
-    </form>
+{% block title %}{{ book.title }} | StudyMate AI{% endblock %}
 
-    {% if query %}
-        <h2>Search Results</h2>
+{% block content %}
+    <a class="back-link" href="{% url 'dashboard' %}">← Back to my library</a>
+    <div class="page-heading">
+        <p class="eyebrow">{{ book.get_language_display }} · {{ book.get_standard_display }}</p>
+        <h1>{{ book.title }}</h1>
+        <p class="subtitle">{{ book.subject }} · Search within this textbook and browse detected chapters and topics.</p>
+    </div>
 
-        {% for result in results %}
-            <article>
-                <h3>{{ result.title }}</h3>
-                <p>Page {{ result.page_number }}</p>
-                <p>{{ result.content|truncatechars:1200 }}</p>
-            </article>
-            <hr>
-        {% empty %}
-            <p>
-                I couldn't find supporting content for this query
-                in this textbook. Try different keywords.
-            </p>
-        {% endfor %}
-    {% endif %}
+    <div class="workspace-grid">
+        <section>
+            <div class="panel">
+                <p class="eyebrow">Book search</p>
+                <h2>What are you looking for?</h2>
+                <form class="search-form" method="post"
+                      data-processing-title="Searching this textbook"
+                      data-processing-message="Finding relevant passages in {{ book.title }}. This usually takes a few seconds.">
+                    {% csrf_token %}
+                    <input
+                        class="search-input"
+                        type="search"
+                        name="q"
+                        value="{{ query }}"
+                        placeholder="Search this textbook"
+                        aria-label="Search this textbook"
+                        maxlength="1000"
+                        required
+                    >
+                    <button type="submit">Search book</button>
+                </form>
+            </div>
 
-    <h2>Chapters and Topics</h2>
+            {% if answer %}
+                <section class="result-list" aria-live="polite">
+                    <article class="card result-card">
+                        <p class="eyebrow">Your question</p>
+                        <h3>{{ query }}</h3>
+                        <p class="eyebrow">Textbook answer</p>
+                        <p class="result-content">{{ answer.answer }}</p>
+                        {% if answer.sources %}
+                            <h3>Sources</h3>
+                            <ul class="topic-list">
+                                {% for source in answer.sources %}
+                                    <li class="topic-item">
+                                        <strong>{{ source.title }} · Page {{ source.page_number }} [{{ source.source_id }}]</strong>
+                                        <span>{{ source.content }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </article>
+                </section>
+            {% endif %}
 
-    {% for topic in topics %}
-        <p>
-            {{ topic.get_topic_type_display }}:
-            {{ topic.title }} — Page {{ topic.page_number }}
-        </p>
-    {% empty %}
-        <p>No topics detected yet.</p>
-    {% endfor %}
+            {% if chat_messages %}
+                <section class="result-list" aria-label="Conversation history">
+                    <h2>Conversation</h2>
+                    {% for message in chat_messages %}
+                        <article class="card result-card">
+                            <p class="result-meta">{{ message.get_role_display }}</p>
+                            <p class="result-content">{{ message.content }}</p>
+                        </article>
+                    {% endfor %}
+                </section>
+            {% elif not answer %}
+                <section class="empty-state chat-empty-state">
+                    <span class="empty-state-icon" aria-hidden="true">✦</span>
+                    <h3>Start with a question</h3>
+                    <p>Ask about a concept in this book. We’ll search its pages and show the passages that support the response.</p>
+                </section>
+            {% endif %}
 
-    <p>
-        <a href="{% url 'main_room' %}">Go to Main Room</a>
-    </p>
-    <p>
-        <a href="{% url 'dashboard' %}">Back to Dashboard</a>
-    </p>
-</body>
-</html>
+            {% if answer and results %}
+                <section class="result-list" aria-live="polite">
+                    <h2>Retrieved textbook passages</h2>
+                    {% for result in results %}
+                        <article class="card result-card">
+                            <p class="result-meta">{{ result.title }} · Page {{ result.page_number }}</p>
+                            <p class="result-content">{{ result.content|truncatechars:1200 }}</p>
+                        </article>
+                    {% endfor %}
+                </section>
+            {% endif %}
+        </section>
+
+        <aside class="panel">
+            <p class="eyebrow">Explore the book</p>
+            <h2>Chapters &amp; topics</h2>
+            {% if topics %}
+                <ul class="topic-list">
+                    {% for topic in topics %}
+                        <li class="topic-item">
+                            <strong>{{ topic.title }}</strong>
+                            <span>{{ topic.get_topic_type_display }} · Page {{ topic.page_number }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="muted">No topics detected yet.</p>
+            {% endif %}
+        </aside>
+    </div>
+{% endblock %}

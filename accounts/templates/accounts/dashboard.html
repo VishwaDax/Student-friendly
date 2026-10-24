@@ -1,49 +1,86 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "accounts/base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Student Dashboard</title>
-</head>
+{% block title %}My Library | StudyMate AI{% endblock %}
 
-<body>
-    <h1>Welcome, {{ request.user.username }}</h1>
+{% block content %}
+    <section class="dashboard-hero">
+        <div>
+            <p class="eyebrow">Your learning space</p>
+            <h1>Welcome back, {{ request.user.username }}</h1>
+            <p class="subtitle">Your textbooks and study searches, all in one place.</p>
+            <p class="hero-caption">A personal space for focused, textbook-based learning.</p>
+        </div>
+        <a class="button" href="{% url 'upload_book' %}">＋ Upload a textbook</a>
+    </section>
 
-    <p>Age: {{ request.user.age|default:"Not provided" }}</p>
-    <p>Standard: {{ request.user.get_standard_display|default:"Not selected" }}</p>
-    <p>
-        Preferred language:
-        {{ request.user.get_preferred_language_display }}
-    </p>
-    <p>
-        <a href="{% url 'upload_book' %}">
-            Upload a Textbook
-        </a>
-    </p>
+    <section class="stats-grid" aria-label="Student profile">
+        <div class="stat-card">
+            <span>My textbooks</span>
+            <strong>{{ books|length }}</strong>
+        </div>
+        <div class="stat-card">
+            <span>Class / standard</span>
+            <strong>{{ request.user.get_standard_display|default:"Not selected" }}</strong>
+        </div>
+        <div class="stat-card">
+            <span>Preferred language</span>
+            <strong>{{ request.user.get_preferred_language_display|default:"Not selected" }}</strong>
+        </div>
+    </section>
 
-    <h2>My Textbooks</h2>
+    <section>
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Your collection</p>
+                <h2>My textbooks</h2>
+            </div>
+            <a href="{% url 'main_room' %}">Search all my books →</a>
+        </div>
 
-    {% for book in books %}
-    <div>
-        <h3>{{ book.title }}</h3>
-        <p>Subject: {{ book.subject }}</p>
-        <p>Status: {{ book.status }}</p>
-
-        {% if book.status == "ready" %}
-        <a href="{% url 'book_chat' book.id %}">
-            Open Book Chat
-        </a>
+        {% if books %}
+            <div class="book-grid">
+                {% for book in books %}
+                    <article class="card book-card">
+                        <div class="book-card-top">
+                            <span class="book-icon" aria-hidden="true">▤</span>
+                            <span class="status status-{{ book.status }}">{{ book.get_status_display }}</span>
+                        </div>
+                        <h3>{{ book.title }}</h3>
+                        <p class="muted">{{ book.subject }} · {{ book.get_language_display }}</p>
+                        {% if book.status == "processing" %}
+                            <p class="book-status-note"><span class="inline-spinner" aria-hidden="true"></span> Your textbook is being prepared. Refresh this page in a little while.</p>
+                        {% elif book.status == "failed" %}
+                            <p class="book-status-note book-status-error">We couldn’t prepare this file. Try uploading the PDF again or choose another copy.</p>
+                        {% elif book.status != "ready" %}
+                            <p class="book-status-note">This book is waiting to be processed before it can be searched.</p>
+                        {% endif %}
+                        <div class="book-card-actions">
+                            {% if book.status == "ready" %}
+                                <a class="button" href="{% url 'book_chat' book.id %}">Open book chat</a>
+                            {% endif %}
+                            <form
+                                class="book-delete-form"
+                                method="post"
+                                action="{% url 'delete_book' book.id %}"
+                                data-confirm="Delete &quot;{{ book.title|escapejs }}&quot; and all of its textbook data? This cannot be undone."
+                                data-processing-title="Deleting your textbook"
+                                data-processing-message="Removing this textbook, its passages, and its search data."
+                            >
+                                {% csrf_token %}
+                                <button class="delete-button" type="submit">Delete book</button>
+                            </form>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <span class="empty-state-icon" aria-hidden="true">▤</span>
+                <p class="eyebrow">A fresh start</p>
+                <h3>Your library starts here</h3>
+                <p>Upload a textbook to search its passages, see page references, and study from your own materials.</p>
+                <a class="button" href="{% url 'upload_book' %}">Upload your first textbook</a>
+            </div>
         {% endif %}
-    </div>
-    {% empty %}
-    <p>You haven't uploaded any textbooks yet.</p>
-    {% endfor %}
-
-    <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Logout</button>
-    </form>
-</body>
-
-</html>
+    </section>
+{% endblock %}

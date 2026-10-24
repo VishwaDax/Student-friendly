@@ -1,24 +1,37 @@
+{% extends "accounts/base.html" %}
+{% load static %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Student Signup</title>
-</head>
-<body>
-    <h1>Create Student Account</h1>
+{% block title %}Create account | StudyMate AI{% endblock %}
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
+{% block content %}
+    <div class="auth-layout">
+        <section class="auth-intro">
+            <img
+                class="auth-brand-logo"
+                src="{% static 'accounts/images/studymate-logo.png' %}"
+                alt="StudyMate AI — Your Textbook Learning Partner"
+            >
+            <p class="eyebrow">A better way to study</p>
+            <h1>Make your textbooks easier to learn from.</h1>
+            <p class="subtitle">Create your student profile and build a personal library you can search whenever you need it.</p>
+            <div class="auth-note">
+                <span aria-hidden="true">✦</span>
+                <span>Start with your class and language preferences. You can add textbooks to your library after signing up.</span>
+            </div>
+        </section>
 
-        <button type="submit">Create Account</button>
-    </form>
-
-    <p>
-        Already registered?
-        <a href="{% url 'login' %}">Login</a>
-    </p>
-</body>
-</html>
+        <section class="panel auth-card">
+            <h2>Create your account</h2>
+            <p class="muted">Set up your student profile to get started.</p>
+            {% if form.non_field_errors %}
+                <div class="message message-error" role="alert">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-fields">{{ form.as_p }}</div>
+                <button class="form-submit" type="submit">Create student account</button>
+            </form>
+            <p class="form-footer">Already registered? <a href="{% url 'login' %}">Log in</a></p>
+        </section>
+    </div>
+{% endblock %}
